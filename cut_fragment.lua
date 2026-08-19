@@ -5,6 +5,36 @@ mp.register_event("file-loaded", function()
   start_pos = nil
 end)
 
+function get_selected_maps()
+  local maps = {}
+
+  local function add_track(track_type)
+    local ff_index = mp.get_property_native("current-tracks/" .. track_type .. "/ff-index")
+
+    if type(ff_index) == "number" and ff_index >= 0 then
+      maps[#maps + 1] = "0:" .. tostring(ff_index)
+    end
+  end
+
+  local video_index = mp.get_property_native("current-tracks/video/ff-index")
+
+  if type(video_index) ~= "number" or video_index < 0 then
+    return nil, "No video track selected"
+  end
+
+  add_track("video")
+  add_track("audio")
+
+  local subtitles_selected = mp.get_property("sid") ~= "no"
+  local subtitles_visible = mp.get_property_native("sub-visibility")
+
+  if subtitles_selected and subtitles_visible then
+    add_track("sub")
+  end
+
+  return maps
+end
+
 function toggle_mark()
   local pos, err = mp.get_property_number("time-pos")
 
@@ -42,27 +72,39 @@ function cut(start_pos, end_pos)
     return print_msg("Cannot determine output path")
   end
 
+  local maps, map_error = get_selected_maps()
+
+  if not maps then
+    return print_msg(map_error)
+  end
+
+  local args = {
+    "ffmpeg",
+    "-ss",
+    string.format("%.6f", start_pos),
+    "-seek2any",
+    "0",
+    "-y",
+    "-i",
+    mp.get_property("path"),
+    "-t",
+    string.format("%.6f", duration),
+  }
+
+  for _, map in ipairs(maps) do
+    args[#args + 1] = "-map"
+    args[#args + 1] = map
+  end
+
+  args[#args + 1] = "-c"
+  args[#args + 1] = "copy"
+  args[#args + 1] = "-avoid_negative_ts"
+  args[#args + 1] = "make_zero"
+  args[#args + 1] = out_name
+
   mp.command_native_async({
     name = "subprocess",
-    args = {
-      "ffmpeg",
-      "-ss",
-      string.format("%.6f", start_pos),
-      "-seek2any",
-      "0",
-      "-y",
-      "-i",
-      mp.get_property("path"),
-      "-t",
-      string.format("%.6f", duration),
-      "-c:v",
-      "copy",
-      "-c:a",
-      "copy",
-      "-avoid_negative_ts",
-      "make_zero",
-      out_name,
-    },
+    args = args,
     capture_stderr = true,
     playback_only = false,
   }, function(success, result, error)

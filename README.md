@@ -6,7 +6,7 @@ Press `c` at the beginning of the fragment, then press it again at the end.
 
 The script uses FFmpeg stream copy:
 
-- `-c:v copy` and `-c:a copy` avoid re-encoding;
+- `-c copy` copies the selected streams without re-encoding;
 - video quality is preserved;
 - cutting is fast;
 - `-ss` and `-seek2any 0` use keyframe-based seeking;
