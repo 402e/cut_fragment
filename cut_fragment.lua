@@ -1,5 +1,9 @@
 local start_pos = nil
 
+mp.register_event("file-loaded", function()
+  start_pos = nil
+end)
+
 function toggle_mark()
   local pos, err = mp.get_property_number("time-pos")
 
