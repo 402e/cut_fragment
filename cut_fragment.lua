@@ -1,7 +1,12 @@
 local start_pos = nil
 
 function toggle_mark()
-  local pos = mp.get_property_number("time-pos")
+  local pos, err = mp.get_property_number("time-pos")
+
+  if pos == nil then
+    return print_msg("Playback position is unavailable")
+  end
+
   if start_pos then
     local end_pos = pos
     local cut_fragment_fmt = "Cut fragment: %s - %s"
