@@ -64,10 +64,12 @@ function print_msg(string)
 end
 
 function convert_time(duration)
-  local time_fmt = "%02d:%02d:%02.03f"
-  local hours = duration / 3600
-  local minutes = duration % 3600 / 60
+  local time_fmt = "%02d:%02d:%06.3f"
+
+  local hours = math.floor(duration / 3600)
+  local minutes = math.floor((duration % 3600) / 60)
   local seconds = duration % 60
+
   return time_fmt:format(hours, minutes, seconds)
 end
 
