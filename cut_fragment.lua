@@ -1,3 +1,4 @@
+local utils = require("mp.utils")
 local start_pos = nil
 
 mp.register_event("file-loaded", function()
@@ -37,6 +38,10 @@ function cut(start_pos, end_pos)
   local duration = end_pos - start_pos
   local out_name = get_out_name(start_pos, end_pos)
 
+  if not out_name then
+    return print_msg("Cannot determine output path")
+  end
+
   mp.command_native_async({
     name = "subprocess",
     args = {
@@ -56,7 +61,7 @@ function cut(start_pos, end_pos)
       "copy",
       "-avoid_negative_ts",
       "make_zero",
-      "file:" .. out_name,
+      out_name,
     },
     capture_stderr = true,
     playback_only = false,
@@ -94,13 +99,24 @@ function convert_time(duration)
 end
 
 function get_out_name(start_pos, end_pos)
-  local out_name_fmt = "%s_%s%s"
-  local cut_time_fmt = "%s-%s"
-  local name = mp.get_property("filename")
-  local ext = name:match("^.+(%..+)$")
-  local cut_time = cut_time_fmt:format(convert_time(start_pos), convert_time(end_pos))
-  name = name:gsub(ext, "")
-  return out_name_fmt:format(name, cut_time, ext)
+  local path = mp.get_property("path")
+
+  if not path then
+    return nil
+  end
+
+  local directory, filename = utils.split_path(path)
+  local name, ext = filename:match("^(.*)(%.[^.]*)$")
+
+  name = name or filename
+  ext = ext or ""
+
+  local start_time = convert_time(start_pos):gsub(":", "-")
+  local end_time = convert_time(end_pos):gsub(":", "-")
+
+  local output_name = string.format("%s_%s-%s%s", name, start_time, end_time, ext)
+
+  return utils.join_path(directory, output_name)
 end
 
 mp.add_key_binding("c", "cut_fragment", toggle_mark)
