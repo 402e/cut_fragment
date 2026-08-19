@@ -49,13 +49,24 @@ function cut(start_pos, end_pos)
       "make_zero",
       "file:" .. out_name,
     },
+    capture_stderr = true,
+    playback_only = false,
   }, function(success, result, error)
-    if success then
-      return print_msg("Finish cutting")
+    if not success then
+      return print_msg("mpv failed to run FFmpeg: " .. tostring(error))
     end
-    if error then
-      return print_msg("Failed to encode: " .. error)
+
+    if not result or result.status ~= 0 then
+      local details = result and result.stderr
+
+      if not details or details == "" then
+        details = result and result.error_string
+      end
+
+      return print_msg("FFmpeg failed: " .. tostring(details or "unknown error"))
     end
+
+    print_msg("Finished cutting")
   end)
 end
 
