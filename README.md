@@ -1,6 +1,20 @@
 ## cut_fragment
-This is a script for the mpv that cut fragment from video using ffmpeg witn `-accurate_seek` flag.
 
-**You need ffmpeg in your PATH (or in the same folder as mpv) for this script to work.**
+An mpv script for cutting video fragments with FFmpeg without re-encoding.
 
-To use, press `c` at the beginning of the fragment you want to cut, then press again at the end to cut it.
+Press `c` at the beginning of the fragment, then press it again at the end.
+
+The script uses FFmpeg stream copy:
+
+- `-c:v copy` and `-c:a copy` avoid re-encoding;
+- video quality is preserved;
+- cutting is fast;
+- `-ss` and `-seek2any 0` use keyframe-based seeking;
+- `-avoid_negative_ts make_zero` normalizes output timestamps.
+
+For codecs with inter-frame compression, such as H.264 and H.265, stream-copy
+cutting is limited by keyframes. The actual boundary may differ slightly from
+the selected position. Frame-accurate cutting requires re-encoding.
+
+**Requirements:** `ffmpeg` must be available in `PATH` or located in the same
+directory as mpv.
